@@ -15,12 +15,15 @@ $("#add-train-btn").on("click", function (event) {
     var trainName = $("#train-name-input").val().trim();
     var trainDestination = $("#destination-input").val().trim();
     var trainFirst = $("#first-train-input").val().trim();
+    var firstTrainHour = trainFirst.split(":")[0];
+    var firstTrainMinute = trainFirst.split(":")[1];
     var trainFrequency = $("#frequency-input").val().trim();
 
     var newTrain = {
         name: trainName,
         destination: trainDestination,
-        first: trainFirst,
+        firstTrainHour: firstTrainHour,
+        firstTrainMinute: firstTrainMinute,
         frequency: trainFrequency
     }
     database.ref('records/').push(newTrain);
@@ -38,33 +41,27 @@ database.ref('records/').on("child_added", function (childSnapshot) {
 
     var trainName = childSnapshot.val().name;
     var trainDestination = childSnapshot.val().destination;
-    var firstTrain = childSnapshot.val().first;
-    var trainFrequency = childSnapshot.val().frequency;
+    var firstTrainHour = childSnapshot.val().firstTrainHour;
+    var firstTrainMinute = childSnapshot.val().firstTrainMinute;
+    var moment_firstTrain = moment().set({ 'hour': firstTrainHour, 'minute': firstTrainMinute });
+
+    var trainFrequency = parseInt(childSnapshot.val().frequency);
     var nextArrival = "In Test";
     var minutesAway = "In Test";
-    var prettyFirstTrain = moment(firstTrain, "HH:mm");
-    
-    if (!moment(prettyFirstTrain).isValid() || !Number.isInteger(parseInt(trainFrequency))) {
+
+    if (!moment(moment_firstTrain).isValid() || !Number.isInteger(trainFrequency)) {
         //do not display the info due to bad data
-        $("#first-train-input").val("");
-        $("#frequency-input").val("");
-        alert("Invalid Input:" + firstTrain + ", " + trainFrequency);
+        alert("Invalid Input(s)");
     }
     else {
         //display the info
-        
-        while (moment().diff(prettyFirstTrain) > 0) {
-            prettyFirstTrain = moment().add(trainFrequency, 'm');
-            if (moment().diff(prettyFirstTrain) < 0) {
-                console.log("detected case where we added frequency and its now arriving soon");
-                nextArrival = prettyFirstTrain.format("hh:mm A");
-                minutesAway = moment().to(prettyFirstTrain);
-                break;
-            }
-            else {
-                prettyFirstTrain = moment().add(trainFrequency, 'm');
-            }
+
+        while (moment_firstTrain.diff(moment()) < 0) {
+            moment_firstTrain = moment_firstTrain.add(trainFrequency, 'm');
         }
+        console.log(moment_firstTrain);
+        nextArrival = moment_firstTrain.format("hh:mm A");
+        minutesAway = moment().to(moment_firstTrain);
 
         var newRow = $("<tr>").append(
             $("<td>").text(trainName),
