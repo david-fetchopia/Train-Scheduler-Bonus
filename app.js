@@ -43,9 +43,10 @@ database.ref('records/').on("child_added", function (childSnapshot) {
     var trainDestination = childSnapshot.val().destination;
     var firstTrainHour = childSnapshot.val().firstTrainHour;
     var firstTrainMinute = childSnapshot.val().firstTrainMinute;
-    var moment_firstTrain = moment().set({ 'hour': firstTrainHour, 'minute': firstTrainMinute });
-
     var trainFrequency = parseInt(childSnapshot.val().frequency);
+    
+    var moment_firstTrain = moment().set({ 'hour': firstTrainHour, 'minute': firstTrainMinute });
+    
     var nextArrival = "In Test";
     var minutesAway = "In Test";
 
@@ -55,11 +56,11 @@ database.ref('records/').on("child_added", function (childSnapshot) {
     }
     else {
         //display the info
-
+        //update first train to be the next arrival
         while (moment_firstTrain.diff(moment()) < 0) {
             moment_firstTrain = moment_firstTrain.add(trainFrequency, 'm');
         }
-        console.log(moment_firstTrain);
+
         nextArrival = moment_firstTrain.format("hh:mm A");
         minutesAway = moment().to(moment_firstTrain);
 
@@ -70,7 +71,22 @@ database.ref('records/').on("child_added", function (childSnapshot) {
             $("<td>").text(nextArrival),
             $("<td>").text(minutesAway)
         );
-
         $("#train-table > tbody").append(newRow);
     }
 });
+
+$(document).ready(function(){
+    
+    (function(){
+        setInterval(function(){
+            document.querySelector("#display").innerHTML = "Current Time: " + moment().format("hh:mm:ss A");
+        }, 1000);
+        setInterval(function(){
+            window.location.reload();
+        },60000);
+    })();
+    
+});
+
+
+
